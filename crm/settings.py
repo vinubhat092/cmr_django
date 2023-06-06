@@ -55,6 +55,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': ["C:/Python38/crm/accounts/templates"],
+        'DIRS': ["/Users/vinayakrbhat/cmr_django/accounts/templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
