@@ -11,10 +11,16 @@
             <a class = "btn btn-primary btn-sm btn-block" href="" >create customer</a>
             <table class = "table table-sm">
                 <tr>
-                    <th></th>
                     <th>customer</th>
-                    <th>Orders</th>
+                    <th>Phone</th>
+                    
                 </tr>
+                {% for i in customers %}
+                <tr>
+                    <td>{{i.name}}</td>
+                    <td>{{i.phone}}</td>
+                </tr>
+                {% endfor %}
             </table>
         </div>
     </div>
@@ -25,13 +31,22 @@
             <a class = "btn btn-primary btn-sm btn-block" href="" >create order</a>
             <table class = "table table-sm">
                 <tr>
-                    <th></th>
                     <th>product</th>
                     <th>date ordered</th>
                     <th>status</th>
                     <th>update</th>
                     <th>remove</th>
                 </tr>
+                {% for i in orders %}
+                <tr>
+                    <td>{{i.product}}</td>
+                    <td>{{i.date_created}}</td>
+                    <td>{{i.status}}</td>
+                    <td><a href="">update</a></td>
+                    <td><a href="">remove</a></td>
+                    
+                </tr>
+                {% endfor %}
             </table>
         </div>
     </div>
