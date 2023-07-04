@@ -7,11 +7,13 @@ from .filters import OrderFilter
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.decorators import login_required
-from .decorators import unauthenticated_user
+from .decorators import unauthenticated_user,allowed_users,admin_only
+from django.contrib.auth.models import Group
 # Create your views here.
 from .models import *
 
 @login_required(login_url="loginPage")
+@admin_only
 def home(request):
     print("comingnge")
     orders = Order.objects.all()
@@ -20,7 +22,6 @@ def home(request):
     orders_count = orders.count()
     orders_delivered = orders.filter(status="Delivered").count()
     orders_pending = orders.filter(status="pending").count()
-    print("sf",customers)
     context = {
         "orders":orders,
         "customers":customers,
@@ -37,9 +38,13 @@ def registerPage(request):
         form = CreateUserForm(request.POST)
         print("cdsd")
         if form.is_valid():
-            form.save()
-            user = form.cleaned_data.get('username')
-            messages.success(request, "Account was created for" + user)
+            user = form.save()
+            username = form.cleaned_data.get('username')
+
+            group = Group.objects.get(name='customer')           #whenever user registers it will be defaultly considered as customer group not admin
+            user.groups.add(group)
+            Customer.objects.create(user=user)         
+            messages.success(request, "Account was created for" + username)
             return redirect('loginPage')
     context={"form":form}
     return render(request,"accounts/register.html",context)
@@ -59,19 +64,40 @@ def loginPage(request):
             return redirect("home")
         else:
             messages.info(request,"username or password is incorrect")
-
-
     context={}
     return render(request,"accounts/login.html",context)
 
 def logoutPage(request):
     logout(request)
     return redirect("loginPage")
+
+
+@login_required(login_url="loginPage")
+@allowed_users(allowed_roles=['customer'])
+def userPage(request):
+    orders = request.user.customer.order_set.all()
+    print("dskf",orders)
+    orders_count = orders.count()
+    orders_delivered = orders.filter(status="Delivered").count()
+    orders_pending = orders.filter(status="pending").count()
+    context={"orders":orders,
+        "orders_count":orders_count,
+        "orders_delivered":orders_delivered,
+        "orders_pending":orders_pending,}
+    return render(request,"accounts/user.html",context)
+
+@login_required(login_url="loginPage")
+@allowed_users(allowed_roles=['customer'])
+def accountSettings(request):
+    context = {}
+    return render(request,"accounts/account_settings.html",context)
+
 @login_required(login_url="loginPage")
 def dashboard(request):
     return render(request,"accounts/dashboard.html")
 
 @login_required(login_url="loginPage")
+@allowed_users(allowed_roles=['admin'])
 def customer(request,pk_test):
     customer = Customer.objects.get(id=pk_test)
     orders = customer.order_set.all()
@@ -84,14 +110,18 @@ def customer(request,pk_test):
                "orders_count":orders_count,
                "my_filter":my_filter}
     return render(request,"accounts/customer.html",context)
+
 @login_required(login_url="loginPage")
+@allowed_users(allowed_roles=['admin'])
 def products(request):
     products = Product.objects.all()
     context = {
         "products":products
     }
     return render(request,"accounts/products.html",context)
+
 @login_required(login_url="loginPage")
+@allowed_users(allowed_roles=['admin'])
 def createOrder(request,pk):
     OrderFormSet = inlineformset_factory(Customer,Order , fields=('product','status') ,extra=10)    #inline formsets
     customer = Customer.objects.get(id=pk)
@@ -107,7 +137,9 @@ def createOrder(request,pk):
             return redirect('/')
     context={"formset":formset}
     return render(request,"accounts/create_order.html",context)
+
 @login_required(login_url="loginPage")
+@allowed_users(allowed_roles=['admin'])
 def updateOrder(request,pk):
     orderss = Order.objects.get(id=pk)
     form = Orderform(instance=orderss)
@@ -119,7 +151,9 @@ def updateOrder(request,pk):
             return redirect('/')
     context={"form":form}
     return render(request,"accounts/create_order.html",context)
+
 @login_required(login_url="loginPage")
+@allowed_users(allowed_roles=['admin'])
 def deleteOrder(request,pk):
     orderss = Order.objects.get(id=pk)
     context={"orderss":orderss}
