@@ -1,7 +1,7 @@
 from django.shortcuts import render,redirect
 from django.http import HttpResponse
 from django.forms import inlineformset_factory
-from .forms import Orderform,CreateUserForm
+from .forms import Orderform,CreateUserForm,CustomerForm
 from django.contrib.auth.forms import UserCreationForm
 from .filters import OrderFilter
 from django.contrib import messages
@@ -41,9 +41,6 @@ def registerPage(request):
             user = form.save()
             username = form.cleaned_data.get('username')
 
-            group = Group.objects.get(name='customer')           #whenever user registers it will be defaultly considered as customer group not admin
-            user.groups.add(group)
-            Customer.objects.create(user=user)         
             messages.success(request, "Account was created for" + username)
             return redirect('loginPage')
     context={"form":form}
@@ -89,7 +86,12 @@ def userPage(request):
 @login_required(login_url="loginPage")
 @allowed_users(allowed_roles=['customer'])
 def accountSettings(request):
-    context = {}
+    customer = request.user.customer
+    form = CustomerForm(instance=customer)
+    context = {"form":form}
+    if request.method == "POST":
+        form = CustomerForm(request.POST,request.FILES,instance=customer)
+        form.save()
     return render(request,"accounts/account_settings.html",context)
 
 @login_required(login_url="loginPage")
